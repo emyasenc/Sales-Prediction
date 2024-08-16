@@ -25,8 +25,9 @@ class DataTransformation:
             # Define numerical and categorical columns
             numerical_columns = [
                 "Temperature", "Fuel_Price", "CPI", "Unemployment", 
-                "Month", "Lag_1", "Lag_2", "Lag_3", "Lag_4", "Lag_5", 
-                "Rolling_Mean", "Rolling_Std", "Days_to_Holiday"
+                "Lag_1", "Lag_2", "Lag_3", "Lag_4", "Lag_5", 
+                "Rolling_Mean", "Rolling_Std", "Days_to_Holiday",
+                "Day_of_Week", "Week_of_Year", "Quarter", "Is_Mid_Month"
             ]
             categorical_columns = ["Store", "Is_Holiday"]
 
