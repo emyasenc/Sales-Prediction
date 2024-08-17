@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Walmart Sales Prediction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .form-group input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        .form-group input[type="number"]::-webkit-inner-spin-button, 
+        .form-group input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .form-group .placeholder {
+            color: #aaa;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Walmart Sales Prediction</h1>
+
+        <form action="{{ url_for('predict_datapoint') }}" method="post">
+            <legend>Sales Prediction Input</legend>
+            
+            <div class="form-group">
+                <label for="store">Store</label>
+                <input type="number" id="store" name="store" placeholder="Enter Store Number" required>
+            </div>
+            <div class="form-group">
+                <label for="weekly_sales">Weekly Sales</label>
+                <input type="number" id="weekly_sales" name="weekly_sales" step="0.01" placeholder="Enter Weekly Sales" required>
+            </div>
+            <div class="form-group">
+                <label for="holiday_flag">Holiday Flag</label>
+                <select id="holiday_flag" name="holiday_flag" required>
+                    <option class="placeholder" selected disabled value="">Select Holiday Flag</option>
+                    <option value="0">No</option>
+                    <option value="1">Yes</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="temperature">Temperature</label>
+                <input type="number" id="temperature" name="temperature" step="0.01" placeholder="Enter Temperature" required>
+            </div>
+            <div class="form-group">
+                <label for="fuel_price">Fuel Price</label>
+                <input type="number" id="fuel_price" name="fuel_price" step="0.01" placeholder="Enter Fuel Price" required>
+            </div>
+            <div class="form-group">
+                <label for="cpi">CPI</label>
+                <input type="number" id="cpi" name="cpi" step="0.01" placeholder="Enter CPI" required>
+            </div>
+            <div class="form-group">
+                <label for="unemployment">Unemployment</label>
+                <input type="number" id="unemployment" name="unemployment" step="0.01" placeholder="Enter Unemployment Rate" required>
+            </div>
+            <!-- The following fields are derived and will be computed in the backend -->
+            <div class="form-group">
+                <input class="btn" type="submit" value="Predict Sales">
+            </div>
+        </form>
+        <h2>
+            Prediction Result: {{ results }}
+        </h2>
+    </div>
+</body>
+</html>
