@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Walmart Sales Prediction</title>
+    <title>Walmart Sales and Demand Prediction</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -29,7 +29,7 @@
             margin-bottom: 5px;
             font-weight: bold;
         }
-        .form-group input, .form-group select {
+        .form-group input {
             width: 100%;
             padding: 8px;
             border: 1px solid #ccc;
@@ -42,9 +42,6 @@
         .form-group input[type="number"]::-webkit-outer-spin-button {
             -webkit-appearance: none;
             margin: 0;
-        }
-        .form-group .placeholder {
-            color: #aaa;
         }
         .btn {
             display: block;
@@ -65,44 +62,49 @@
 </head>
 <body>
     <div class="container">
-        <h1>Walmart Sales Prediction</h1>
-
+        <h1>Walmart Sales and Demand Prediction</h1>
         <form action="{{ url_for('predict_datapoint') }}" method="post">
-            <legend>Sales Prediction Input</legend>
-            
+            <legend>Sales Prediction</legend>
             <div class="form-group">
                 <label for="store">Store</label>
-                <input type="number" id="store" name="store" placeholder="Enter Store Number" required>
-            </div>
-            <div class="form-group">
-                <label for="weekly_sales">Weekly Sales</label>
-                <input type="number" id="weekly_sales" name="weekly_sales" step="0.01" placeholder="Enter Weekly Sales" required>
+                <input type="number" id="store" name="Store" placeholder="Enter Store Number" required>
             </div>
             <div class="form-group">
                 <label for="holiday_flag">Holiday Flag</label>
-                <select id="holiday_flag" name="holiday_flag" required>
-                    <option class="placeholder" selected disabled value="">Select Holiday Flag</option>
-                    <option value="0">No</option>
-                    <option value="1">Yes</option>
-                </select>
+                <input type="number" id="holiday_flag" name="Holiday_Flag" step="1" placeholder="Enter Holiday Flag (0 or 1)" required>
             </div>
             <div class="form-group">
                 <label for="temperature">Temperature</label>
-                <input type="number" id="temperature" name="temperature" step="0.01" placeholder="Enter Temperature" required>
+                <input type="number" id="temperature" name="Temperature" step="0.01" placeholder="Enter Temperature" required>
             </div>
             <div class="form-group">
                 <label for="fuel_price">Fuel Price</label>
-                <input type="number" id="fuel_price" name="fuel_price" step="0.01" placeholder="Enter Fuel Price" required>
+                <input type="number" id="fuel_price" name="Fuel_Price" step="0.01" placeholder="Enter Fuel Price" required>
             </div>
             <div class="form-group">
                 <label for="cpi">CPI</label>
-                <input type="number" id="cpi" name="cpi" step="0.01" placeholder="Enter CPI" required>
+                <input type="number" id="cpi" name="CPI" step="0.01" placeholder="Enter CPI" required>
             </div>
             <div class="form-group">
                 <label for="unemployment">Unemployment</label>
-                <input type="number" id="unemployment" name="unemployment" step="0.01" placeholder="Enter Unemployment Rate" required>
+                <input type="number" id="unemployment" name="Unemployment" step="0.01" placeholder="Enter Unemployment Rate" required>
             </div>
-            <!-- The following fields are derived and will be computed in the backend -->
+            <div class="form-group">
+                <label for="year">Year</label>
+                <input type="number" id="year" name="Year" placeholder="Enter Year" required>
+            </div>
+            <div class="form-group">
+                <label for="month">Month</label>
+                <input type="number" id="month" name="Month" placeholder="Enter Month" required>
+            </div>
+            <div class="form-group">
+                <label for="day">Day</label>
+                <input type="number" id="day" name="Day" placeholder="Enter Day" required>
+            </div>
+            <div class="form-group">
+                <label for="weekday">Weekday</label>
+                <input type="number" id="weekday" name="Weekday" placeholder="Enter Weekday (0=Monday, 6=Sunday)" required>
+            </div>
             <div class="form-group">
                 <input class="btn" type="submit" value="Predict Sales">
             </div>

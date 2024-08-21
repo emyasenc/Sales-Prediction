@@ -1,90 +1,108 @@
 from flask import Flask, request, render_template
 import pandas as pd
 from datetime import datetime
-import numpy as np
-
+from sklearn.preprocessing import StandardScaler
+import joblib
 from src.pipeline.predict_pipeline import CustomData, PredictPipeline
 
-application = Flask(__name__)
-app = application
+application=Flask(__name__)
 
-# Define major US holidays
-US_HOLIDAYS = {
-    'New Year\'s Day': '01-01',
-    'Martin Luther King Jr. Day': '01-15',
-    'Presidents\' Day': '02-19',
-    'Memorial Day': '05-28',
-    'Independence Day': '07-04',
-    'Labor Day': '09-03',
-    'Columbus Day': '10-08',
-    'Veterans Day': '11-11',
-    'Thanksgiving': '11-22',
-    'Christmas Day': '12-25'
-}
-
-def get_past_sales(store, date, sales_data):
-    """Calculate the average sales for the last 5 weeks for a given store."""
-    # Filter data for the store
-    store_data = sales_data[sales_data['Store'] == store]
-    
-    # Filter data for the last 5 weeks
-    recent_sales = store_data[store_data['Date'] < date].sort_values(by='Date', ascending=False).head(5)
-    
-    # Calculate the average sales
-    avg_sales = recent_sales['Weekly_Sales'].mean()
-    return avg_sales
-
-def calculate_days_to_holiday(date):
-    """Calculate the days to the next major US holiday based on the current date."""
-    # Convert the date to a datetime object
-    current_date = datetime.strptime(date, '%Y-%m-%d')
-    
-    # Calculate the days to the next holiday
-    min_days = float('inf')
-    for holiday, holiday_date in US_HOLIDAYS.items():
-        holiday_datetime = datetime.strptime(f"{current_date.year}-{holiday_date}", '%Y-%m-%d')
-        days_to_holiday = (holiday_datetime - current_date).days
-        
-        if days_to_holiday >= 0 and days_to_holiday < min_days:
-            min_days = days_to_holiday
-            
-    return min_days if min_days != float('inf') else np.nan
+app=application
 
 ## Route for a home page
+
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html') 
 
 @app.route('/predictdata', methods=['GET', 'POST'])
 def predict_datapoint():
     if request.method == 'GET':
-        return render_template('home.html')
+        return render_template('index.html')
     else:
-        # Collecting form data
-        store = int(request.form.get('store'))
-        date = request.form.get('date')
-        sales_data = pd.read_csv('/Users/sophia/Desktop/Sales-Prediction/data/preprocessed/train_data.csv') 
+        try:
+            # Collect form data with default values and type conversion
+            store = request.form.get('Store')
+            holiday_flag = request.form.get('Holiday_Flag')
+            temperature = request.form.get('Temperature')
+            fuel_price = request.form.get('Fuel_Price')
+            cpi = request.form.get('CPI')
+            unemployment = request.form.get('Unemployment')
+            year = request.form.get('Year')
+            month = request.form.get('Month')
+            day = request.form.get('Day')
+            weekday = request.form.get('Weekday')
 
-        # Derived features
-        past_sales = get_past_sales(store, date, sales_data)
-        days_to_holiday = calculate_days_to_holiday(date)
+            # Debug print statements to check form values
+            print("Form Data:", {
+                'Store': store,
+                'Holiday_Flag': holiday_flag,
+                'Temperature': temperature,
+                'Fuel_Price': fuel_price,
+                'CPI': cpi,
+                'Unemployment': unemployment,
+                'Year': year,
+                'Month': month,
+                'Day': day,
+                'Weekday': weekday
+            })
 
-        data = CustomData(
-            store=store,
-            date=date,
-            past_sales=past_sales,
-            days_to_holiday=days_to_holiday
-        )
-        
-        pred_df = data.get_data_as_data_frame()
-        print(pred_df)
-        print("Before Prediction")
+            # Convert to appropriate types with default values if necessary
+            store = int(store) if store else 0
+            holiday_flag = int(holiday_flag) if holiday_flag else 0
+            temperature = float(temperature) if temperature else 0.0
+            fuel_price = float(fuel_price) if fuel_price else 0.0
+            cpi = float(cpi) if cpi else 0.0
+            unemployment = float(unemployment) if unemployment else 0.0
+            year = int(year) if year else 0
+            month = int(month) if month else 0
+            day = int(day) if day else 0
+            weekday = int(weekday) if weekday else 0
 
-        predict_pipeline = PredictPipeline()
-        print("Mid Prediction")
-        results = predict_pipeline.predict(pred_df)
-        print("After Prediction")
-        return render_template('home.html', results=results[0])
+            # Debug print statements to check converted values
+            print("Converted Data:", {
+                'Store': store,
+                'Holiday_Flag': holiday_flag,
+                'Temperature': temperature,
+                'Fuel_Price': fuel_price,
+                'CPI': cpi,
+                'Unemployment': unemployment,
+                'Year': year,
+                'Month': month,
+                'Day': day,
+                'Weekday': weekday
+            })
+            
+            # Create CustomData instance
+            data = CustomData(
+                Store=store,
+                Holiday_Flag=holiday_flag,
+                Temperature=temperature,
+                Fuel_Price=fuel_price,
+                CPI=cpi,
+                Unemployment=unemployment,
+                Year=year,
+                Month=month,
+                Day=day,
+                Weekday=weekday
+            )
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0")
+            # Prepare the DataFrame for prediction
+            pred_df = data.get_data_as_data_frame()
+            print("Input DataFrame for Prediction:", pred_df)
+
+            # Predict
+            predict_pipeline = PredictPipeline()
+            results = predict_pipeline.predict(pred_df)
+
+            # Display results
+            print("Prediction results:", results)
+            return render_template('index.html', results=results[0])
+
+        except Exception as e:
+            print(f"Error: {e}")
+            return render_template('index.html', results=f"An error occurred during prediction: {e}")
+    
+
+if __name__=="__main__":
+    app.run(host="0.0.0.0")         

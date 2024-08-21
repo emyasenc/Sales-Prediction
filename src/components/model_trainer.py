@@ -12,7 +12,7 @@ from sklearn.ensemble import (
 from sklearn.svm import SVR
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import RandomizedSearchCV, cross_val_score
+from sklearn.model_selection import RandomizedSearchCV, TimeSeriesSplit, cross_val_score
 from sklearn.metrics import mean_squared_error, r2_score, make_scorer
 from xgboost import XGBRegressor
 from catboost import CatBoostRegressor
@@ -89,47 +89,56 @@ class ModelTrainer:
                 ])
             }
 
-            # Hyperparameters for grid search
+            # Enhanced hyperparameters for grid search
             params = {
                 'Random Forest Regressor': {
-                    'model__n_estimators': [100, 200, 300],
-                    'model__max_depth': [None, 10, 20],
-                    'model__min_samples_split': [2, 10],
-                    'model__min_samples_leaf': [1, 5]
+                    'model__n_estimators': [50, 100, 200, 500, 1000],
+                    'model__max_depth': [None, 10, 20, 30],
+                    'model__min_samples_split': [2, 5, 10],
+                    'model__min_samples_leaf': [1, 2, 4],
+                    'model__bootstrap': [True, False],
+                    'model__max_features': ['log2', 'sqrt', None, 0.5, 0.8]
                 },
                 'Support Vector Regressor': {
-                    'model__C': [0.01, 1, 100],
-                    'model__epsilon': [0.01, 0.1, 0.2],
-                    'model__kernel': ['linear', 'rbf']
+                    'model__C': [0.01, 0.1, 1, 10, 100],
+                    'model__epsilon': [0.01, 0.1, 0.2, 0.5],
+                    'model__kernel': ['linear', 'rbf', 'poly']
                 },
                 'Gradient Boosting Regressor': {
-                    'model__n_estimators': [100, 300],
-                    'model__learning_rate': [0.01, 0.1, 0.2],
-                    'model__max_depth': [3, 5]
+                    'model__n_estimators': [100, 200, 300, 500],
+                    'model__learning_rate': [0.001, 0.01, 0.1, 0.2],
+                    'model__max_depth': [3, 5, 7],
+                    'model__subsample': [0.7, 0.8, 0.9, 1.0]
                 },
                 'XGBoost': {
-                    'model__n_estimators': [100, 300],
-                    'model__learning_rate': [0.01, 0.1, 0.2],
-                    'model__max_depth': [3, 5]
+                    'model__n_estimators': [100, 300, 500],
+                    'model__learning_rate': [0.001, 0.01, 0.1, 0.2],
+                    'model__max_depth': [3, 5, 7],
+                    'model__subsample': [0.7, 0.8, 0.9, 1.0],
+                    'model__colsample_bytree': [0.7, 0.8, 0.9, 1.0],
+                    'model__gamma': [0, 0.1, 0.2]
                 },
                 'LightGBM': {
-                    'model__n_estimators': [100, 300],
-                    'model__learning_rate': [0.01, 0.1, 0.2],
-                    'model__max_depth': [3, 5]
+                    'model__n_estimators': [100, 300, 500],
+                    'model__learning_rate': [0.001, 0.01, 0.1, 0.2],
+                    'model__max_depth': [-1, 3, 5, 7],
+                    'model__subsample': [0.7, 0.8, 0.9, 1.0],
+                    'model__colsample_bytree': [0.7, 0.8, 0.9, 1.0],
                 },
                 'CatBoost': {
-                    'model__iterations': [100, 300],
-                    'model__learning_rate': [0.01, 0.1, 0.2],
-                    'model__depth': [3, 5]
+                    'model__iterations': [100, 300, 500],
+                    'model__learning_rate': [0.001, 0.01, 0.1, 0.2],
+                    'model__depth': [3, 5, 7],
+                    'model__l2_leaf_reg': [1, 3, 5]
                 },
                 'Elastic Net': {
-                    'model__alpha': [0.1, 1.0, 10.0],
-                    'model__l1_ratio': [0.1, 0.5, 0.9]
+                    'model__alpha': [0.01, 0.1, 1.0, 10.0],
+                    'model__l1_ratio': [0.1, 0.5, 0.7, 0.9]
                 },
                 'K-Nearest Neighbors': {
-                    'model__n_neighbors': [3, 5, 7],
+                    'model__n_neighbors': [3, 5, 7, 9],
                     'model__weights': ['uniform', 'distance'],
-                    'model__algorithm': ['auto', 'ball_tree', 'kd_tree']
+                    'model__algorithm': ['auto', 'ball_tree', 'kd_tree', 'brute']
                 }
             }
 
@@ -141,18 +150,21 @@ class ModelTrainer:
             # Define scoring function
             scorer = make_scorer(mean_squared_error, greater_is_better=False, squared=False)
 
+            # Use TimeSeriesSplit instead of k-fold cross-validation
+            tscv = TimeSeriesSplit(n_splits=5)
+
             # Train and evaluate models
             for model_name, pipeline in models.items():
                 logging.info(f"Training {model_name}")
                 start_time = time.time()
 
                 if model_name in params:
-                    grid_search = RandomizedSearchCV(pipeline, params[model_name], n_iter=5, scoring=scorer, n_jobs=-1, cv=5, verbose=1)
+                    grid_search = RandomizedSearchCV(pipeline, params[model_name], n_iter=10, scoring=scorer, n_jobs=-1, cv=tscv, verbose=1)
                     grid_search.fit(X_train, y_train)
                     best_pipeline = grid_search.best_estimator_
                     best_score = -grid_search.best_score_
                 else:
-                    cv_scores = cross_val_score(pipeline, X_train, y_train, cv=5, scoring=scorer)
+                    cv_scores = cross_val_score(pipeline, X_train, y_train, cv=tscv, scoring=scorer)
                     best_score = -cv_scores.mean()
                     pipeline.fit(X_train, y_train)
                     best_pipeline = pipeline

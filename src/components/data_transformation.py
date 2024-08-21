@@ -24,12 +24,10 @@ class DataTransformation:
         try:
             # Define numerical and categorical columns
             numerical_columns = [
-                "Temperature", "Fuel_Price", "CPI", "Unemployment", 
-                "Lag_1", "Lag_2", "Lag_3", "Lag_4", "Lag_5", 
-                "Rolling_Mean", "Rolling_Std", "Days_to_Holiday",
-                "Day_of_Week", "Week_of_Year", "Quarter", "Is_Mid_Month"
+                "Temperature", "Fuel_Price", "CPI", "Unemployment"
             ]
-            categorical_columns = ["Store", "Is_Holiday"]
+
+            categorical_columns = ["Store", "Holiday_Flag"]
 
             # Define pipelines for numerical and categorical features
             num_pipeline = Pipeline(
