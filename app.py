@@ -1,106 +1,85 @@
-from flask import Flask, request, render_template
+from flask import Flask, render_template, request
 import pandas as pd
-from datetime import datetime
+import numpy as np
 from sklearn.preprocessing import StandardScaler
+from scipy import stats
 import joblib
-from src.pipeline.predict_pipeline import CustomData, PredictPipeline
+from datetime import datetime
 
-app=Flask(__name__)
+# Initialize Flask app
+app = Flask(__name__)
 
-## Route for a home page
+# Load the trained model
+model = joblib.load('notebook/best_model.pkl')
+
+# Feature engineering and preprocessing functions
+def preprocess_input(data):
+    # Create a DataFrame for input data
+    df_input = pd.DataFrame([data])
+
+    # Encode categorical variables
+    df_input['Holiday_Flag'] = df_input['Holiday_Flag'].astype('category')
+    df_input['Store'] = df_input['Store'].astype('category')
+
+    # Extract date-based features (if needed)
+    # Simulate date-based features if needed
+    df_input['Year'] = df_input['Year']
+    df_input['Month'] = df_input['Month']
+    df_input['Day'] = df_input['Day']
+    df_input['Weekday'] = df_input['Weekday']
+
+    # Convert categorical columns to integers
+    df_input['Store'] = df_input['Store'].cat.codes
+    df_input['Holiday_Flag'] = df_input['Holiday_Flag'].cat.codes
+
+    # Feature Scaling
+    numerical_features = ['Temperature', 'Fuel_Price', 'CPI', 'Unemployment']
+    scaler = StandardScaler()
+    
+    # Apply scaling only to the numerical features
+    df_input[numerical_features] = scaler.fit_transform(df_input[numerical_features])
+
+    # Handle outliers
+    z_scores = stats.zscore(df_input['Temperature'])
+    df_input['Temperature'] = np.where(z_scores > 3, np.nan, df_input['Temperature'])
+    df_input['Temperature'] = df_input['Temperature'].fillna(df_input['Temperature'].median())
+    
+    z_scores = stats.zscore(df_input['Fuel_Price'])
+    df_input['Fuel_Price'] = np.where(z_scores > 3, np.nan, df_input['Fuel_Price'])
+    df_input['Fuel_Price'] = df_input['Fuel_Price'].fillna(df_input['Fuel_Price'].median())
+
+    # Return preprocessed DataFrame
+    return df_input
 
 @app.route('/')
 def index():
-    return render_template('index.html') 
+    return render_template('index.html')
 
-@app.route('/predictdata', methods=['GET', 'POST'])
+@app.route('/predict_datapoint', methods=['POST'])
 def predict_datapoint():
-    if request.method == 'GET':
-        return render_template('index.html')
-    else:
-        try:
-            # Collect form data with default values and type conversion
-            store = request.form.get('Store')
-            holiday_flag = request.form.get('Holiday_Flag')
-            temperature = request.form.get('Temperature')
-            fuel_price = request.form.get('Fuel_Price')
-            cpi = request.form.get('CPI')
-            unemployment = request.form.get('Unemployment')
-            year = request.form.get('Year')
-            month = request.form.get('Month')
-            day = request.form.get('Day')
-            weekday = request.form.get('Weekday')
+    # Extract input data from the form
+    user_input = {
+        'Store': request.form['Store'],
+        'Holiday_Flag': request.form['Holiday_Flag'],
+        'Temperature': request.form['Temperature'],
+        'Fuel_Price': request.form['Fuel_Price'],
+        'CPI': request.form['CPI'],
+        'Unemployment': request.form['Unemployment'],
+        'Year': request.form['Year'],
+        'Month': request.form['Month'],
+        'Day': request.form['Day'],
+        'Weekday': request.form['Weekday']
+    }
 
-            # Debug print statements to check form values
-            print("Form Data:", {
-                'Store': store,
-                'Holiday_Flag': holiday_flag,
-                'Temperature': temperature,
-                'Fuel_Price': fuel_price,
-                'CPI': cpi,
-                'Unemployment': unemployment,
-                'Year': year,
-                'Month': month,
-                'Day': day,
-                'Weekday': weekday
-            })
+    # Preprocess the input data
+    preprocessed_data = preprocess_input(user_input)
 
-            # Convert to appropriate types with default values if necessary
-            store = int(store) if store else 0
-            holiday_flag = int(holiday_flag) if holiday_flag else 0
-            temperature = float(temperature) if temperature else 0.0
-            fuel_price = float(fuel_price) if fuel_price else 0.0
-            cpi = float(cpi) if cpi else 0.0
-            unemployment = float(unemployment) if unemployment else 0.0
-            year = int(year) if year else 0
-            month = int(month) if month else 0
-            day = int(day) if day else 0
-            weekday = int(weekday) if weekday else 0
+    # Make prediction using the trained model
+    prediction = model.predict(preprocessed_data)
 
-            # Debug print statements to check converted values
-            print("Converted Data:", {
-                'Store': store,
-                'Holiday_Flag': holiday_flag,
-                'Temperature': temperature,
-                'Fuel_Price': fuel_price,
-                'CPI': cpi,
-                'Unemployment': unemployment,
-                'Year': year,
-                'Month': month,
-                'Day': day,
-                'Weekday': weekday
-            })
-            
-            # Create CustomData instance
-            data = CustomData(
-                Store=store,
-                Holiday_Flag=holiday_flag,
-                Temperature=temperature,
-                Fuel_Price=fuel_price,
-                CPI=cpi,
-                Unemployment=unemployment,
-                Year=year,
-                Month=month,
-                Day=day,
-                Weekday=weekday
-            )
+    # Return the prediction result to the user
+    return render_template('index.html', results=f'Predicted Sales: ${prediction[0]:,.2f}')
 
-            # Prepare the DataFrame for prediction
-            pred_df = data.get_data_as_data_frame()
-            print("Input DataFrame for Prediction:", pred_df)
-
-            # Predict
-            predict_pipeline = PredictPipeline()
-            results = predict_pipeline.predict(pred_df)
-
-            # Display results
-            print("Prediction results:", results)
-            return render_template('index.html', results=results[0])
-
-        except Exception as e:
-            print(f"Error: {e}")
-            return render_template('index.html', results=f"An error occurred during prediction: {e}")
-    
-
-if __name__=="__main__":
-    app.run(host="0.0.0.0")         
+if __name__ == '__main__':
+    app.run(debug=True)
+       
