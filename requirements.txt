@@ -11,4 +11,5 @@ lightgbm
 joblib
 dill
 flask
+gunicorn
 #-e .
